@@ -28,6 +28,9 @@ from diffusers.training_utils import EMAModel
 from diffusers.utils import check_min_version, is_accelerate_version, is_tensorboard_available, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 
+from diffusers.models import AutoencoderKL
+from PIL import Image
+import numpy as np
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.21.0.dev0")
@@ -287,6 +290,7 @@ def main(args):
     logging_dir = os.path.join(args.output_dir, args.logging_dir)
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
 
+    vae = AutoencoderKL.from_pretrained("stabilityai/sdxl-vae") ###
     kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=7200))  # a big number for high resolution or big dataset
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
@@ -472,9 +476,18 @@ def main(args):
             transforms.Normalize([0.5], [0.5]),
         ]
     )
+    def encode(img):
+        print(img)
+        print(type(img))
+        print(img.shape)
+        print(img.min())
+        print(img.max())
+        return img 
+        
+
 
     def transform_images(examples):
-        images = [augmentations(image.convert("RGB")) for image in examples["image"]]
+        images = [encode(augmentations(image.convert("RGB"))) for image in examples["image"]]
         return {"input": images}
 
     logger.info(f"Dataset size: {len(dataset)}")
